@@ -231,8 +231,27 @@ def build_cities():
     print(f'cities: {len(rows)} places')
 
 
-if __name__ == '__main__':
-    what = sys.argv[1:] or ['coast', 'borders', 'rivers', 'countries', 'oceans', 'cities']
+REQUIRED_SOURCES = {
+    'coast': ['gshhg237/gshhs_c.b', 'gshhg237/gshhs_l.b', 'gshhg237/gshhs_i.b', 'gshhg237/gshhs_h.b'],
+    'borders': ['gshhg237/wdb_borders_c.b', 'gshhg237/wdb_borders_l.b', 'gshhg237/wdb_borders_i.b', 'gshhg237/wdb_borders_h.b'],
+    'rivers': ['gshhg237/wdb_rivers_c.b', 'gshhg237/wdb_rivers_l.b', 'gshhg237/wdb_rivers_i.b', 'gshhg237/wdb_rivers_h.b'],
+    'countries': ['ne/ne_50m_admin_0_countries.shp', 'ne/ne_50m_admin_0_countries.dbf'],
+    'oceans': ['ne/ne_50m_geography_marine_polys.shp', 'ne/ne_50m_geography_marine_polys.dbf'],
+    'cities': ['cities/cities5000.txt'],
+}
+
+
+def fail(msg):
+    print(f'build_data.py: {msg}', file=sys.stderr)
+    sys.exit(1)
+
+
+def main(what):
+    for step in what:
+        for rel in REQUIRED_SOURCES.get(step, []):
+            path = os.path.join(SRC, rel)
+            if not os.path.isfile(path) or os.path.getsize(path) == 0:
+                fail(f'missing source file sources/{rel}; run tools/fetch_data.sh (or make fetch) first')
     if 'coast' in what:
         for res in 'clih':
             build_coast(res)
@@ -248,3 +267,18 @@ if __name__ == '__main__':
         build_oceans()
     if 'cities' in what:
         build_cities()
+
+
+if __name__ == '__main__':
+    steps = sys.argv[1:] or ['coast', 'borders', 'rivers', 'countries', 'oceans', 'cities']
+    unknown = [s for s in steps if s not in REQUIRED_SOURCES]
+    if unknown:
+        fail(f'unknown step(s) {unknown}; choose from {list(REQUIRED_SOURCES)}')
+    try:
+        main(steps)
+    except ImportError as e:
+        fail(f'missing Python package ({e}); pip install -r tools/requirements.txt')
+    except Exception as e:  # noqa: BLE001 - one loud line for the site build, details on request
+        if os.environ.get('BUILD_DATA_TRACEBACK'):
+            raise
+        fail(f'{type(e).__name__}: {e} (set BUILD_DATA_TRACEBACK=1 for the traceback)')

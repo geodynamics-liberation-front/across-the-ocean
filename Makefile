@@ -1,11 +1,11 @@
 # Across the Ocean — see PUBLISHING.md in the glf repository for the site contract.
 #
-#   make dist     download the source data, build site/data, and assemble dist/
-#   make data     download + build the data only (writes site/data/)
+#   make dist     check prerequisites, fetch and verify the data, build site/data, assemble dist/
+#   make check    verify prerequisites (nothing is ever installed by the build)
+#   make data     fetch + build the data only (writes site/data/)
 #   make build    convert sources/ into site/data/ without downloading
-#   make fetch    download only (sources/, existing files are kept)
+#   make fetch    download and verify the source data (sources/, existing files are kept)
 #   make serve    build dist/ and serve it on http://localhost:8000/
-#   make check    verify the prerequisites (python3 with numpy and pyshp, curl, unzip)
 #   make clean    remove dist/ and the generated site data (downloads are kept)
 
 PYTHON ?= python3
@@ -17,19 +17,27 @@ dist: data
 	rm -rf dist
 	cp -r site dist
 
+check:
+	@ok=1; \
+	command -v $(PYTHON) >/dev/null || { echo "python3 is required (3.8 or newer): https://www.python.org/" >&2; ok=0; }; \
+	if command -v $(PYTHON) >/dev/null; then \
+	  $(PYTHON) -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)' || { echo "python3 is too old: 3.8 or newer is required" >&2; ok=0; }; \
+	  $(PYTHON) -c 'import numpy' 2>/dev/null || { echo "missing Python package numpy: pip install -r tools/requirements.txt" >&2; ok=0; }; \
+	  $(PYTHON) -c 'import shapefile, sys; sys.exit(0 if int(shapefile.__version__.split(".")[0]) >= 2 else 1)' 2>/dev/null || { echo "missing or too old Python package pyshp (2.0 or newer): pip install -r tools/requirements.txt" >&2; ok=0; }; \
+	fi; \
+	command -v curl >/dev/null || { echo "curl is required to download the source data" >&2; ok=0; }; \
+	command -v unzip >/dev/null || { echo "unzip is required to unpack the source data" >&2; ok=0; }; \
+	command -v sha256sum >/dev/null || { echo "sha256sum (coreutils) is required to verify downloads" >&2; ok=0; }; \
+	[ $$ok = 1 ] || { echo "make check: prerequisites missing, see above" >&2; exit 1; }; \
+	echo "prerequisites ok"
+
 data: check fetch build
 
-check:
-	@command -v $(PYTHON) >/dev/null || { echo "python3 is required" >&2; exit 1; }
-	@command -v curl >/dev/null || { echo "curl is required (to download the datasets)" >&2; exit 1; }
-	@command -v unzip >/dev/null || { echo "unzip is required (to unpack the datasets)" >&2; exit 1; }
-	@$(PYTHON) -c 'import numpy, shapefile' 2>/dev/null || { echo "missing Python packages: pip install -r tools/requirements.txt" >&2; exit 1; }
-
 build: check
-	$(PYTHON) tools/build_data.py        # writes site/data/
+	$(PYTHON) tools/build_data.py        # writes site/data/; exits non-zero on any problem
 
 fetch: check
-	tools/fetch_data.sh                  # downloads into sources/, keeps existing files, verifies each download
+	tools/fetch_data.sh                  # downloads into sources/, keeps existing files, verifies checksums
 
 clean:
 	rm -rf dist site/data

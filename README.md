@@ -42,11 +42,14 @@ build.
 
 ## Building and running
 
-Prerequisites: Python 3 with `numpy` and `pyshp` (`pip install -r
-tools/requirements.txt`), plus `curl`, `unzip` and `make`.
+Prerequisites, installed once by hand (the build never installs anything):
+
+* Python 3.8 or newer with `numpy` and `pyshp` 2.x: `pip install -r tools/requirements.txt`
+* `curl`, `unzip`, `sha256sum` (coreutils) and `make`
 
 ```
-make dist           # fetch the data (~130 MB, once), build site/data, assemble dist/
+make check          # verify the prerequisites; one line per missing item
+make dist           # check, fetch and verify the data (~130 MB, once), build site/data, assemble dist/
 make serve          # the same, then python3 -m http.server 8000 --directory dist
 ```
 
@@ -54,6 +57,15 @@ then open http://localhost:8000/. `make dist` runs from a fresh clone with no
 arguments, keeps downloads it already has, and rebuilds `dist/` cleanly each
 time. `make clean` removes `dist/` and the generated data but keeps the
 downloads.
+
+Downloads land in `sources/`. The GSHHG archive and the Natural Earth files
+are checked against the SHA-256 sums in `tools/SHA256SUMS` before use; a file
+that fails is deleted and the build stops with a message, so a truncated
+download is never processed (re-run `make` to fetch it again). GeoNames
+regenerates `cities5000.zip` daily, so it is verified by size, archive
+integrity and row count instead. Any failed step exits non-zero with a
+one-line message on stderr, and `dist/` is only written once everything else
+has succeeded.
 
 `dist/` is a self-contained static site: every URL to its own files is
 relative, the JavaScript libraries (d3 v7, d3-geo-projection v4, versor,
@@ -67,9 +79,8 @@ a link made with the high-resolution coast loaded carries `r=h` and reloads it,
 so the route reproduces exactly). Click a point on the shore to compute a route
 (Space or Enter also work), Escape closes the panel.
 
-The data build is described below; when `site/data` changes, bump
-`DATA_VERSION` in `site/js/app.js` so browsers (and the site's year-long cache)
-refetch the files.
+When `site/data` changes, bump `DATA_VERSION` in `site/js/app.js` so browsers
+(and the site's year-long cache) refetch the files.
 
 ## Rendering
 
@@ -85,6 +96,19 @@ high-resolution coastline, borders and rivers are fetched on demand. Browsers
 without WebGL2 fall back to the slower 2D-canvas renderer in `render.js`.
 
 ## Data format
+
+Inputs, downloaded and verified by `tools/fetch_data.sh` into `sources/`:
+
+* `gshhg237/` — the unpacked `gshhg-bin-2.3.7.zip` (GSHHG shorelines and the
+  WDBII borders and rivers that ship with it), from the GenericMappingTools
+  GitHub release with soest.hawaii.edu as the mirror.
+* `ne/` — Natural Earth v5.1.2 `ne_50m_admin_0_countries`,
+  `ne_50m_geography_marine_polys` and `ne_10m_populated_places_simple`,
+  fetched file by file from the tagged nvkelso/natural-earth-vector repository.
+* `cities/cities5000.txt` — GeoNames places with population 5000 or more.
+
+`python3 tools/build_data.py` (or `make build`) converts them into
+`site/data/`; a single step can be rebuilt with e.g. `... build_data.py coast`.
 
 The shorelines are written in a small binary format ("GSHB", documented at the
 top of `tools/build_data.py`): a header, one 24-byte record per polygon, then
@@ -116,12 +140,14 @@ coast. The Antarctic ice front (GSHHG level 5) is used as the Antarctic coast.
 
 ## Data credits
 
-* Wessel, P. and W. H. F. Smith (1996), A global, self-consistent,
-  hierarchical, high-resolution shoreline database, J. Geophys. Res., 101,
-  8741–8743. GSHHG 2.3.7, LGPL v3.
-* Natural Earth (public domain): admin-0 countries, marine polygons,
-  populated places.
-* GeoNames (CC BY 4.0): cities5000.
-* d3, d3-geo-projection (ISC), versor (BSD).
+* **GSHHG 2.3.7** — Wessel, P. and W. H. F. Smith (1996), A global,
+  self-consistent, hierarchical, high-resolution shoreline database,
+  J. Geophys. Res., 101, 8741–8743. Shorelines, WDBII borders and rivers.
+  Licence: LGPL v3.
+* **Natural Earth v5.1.2** — admin-0 countries, marine polygons and populated
+  places. Public domain.
+* **GeoNames** cities5000 — CC BY 4.0, https://www.geonames.org/.
+* **d3**, **d3-geo-projection**, **earcut** (ISC) and **versor** (BSD), loaded
+  from cdn.jsdelivr.net.
 * Inspired by the Washington Post's 2014 "what's across the ocean" map and the
   r/MapPorn follow-ups, which follow lines of latitude instead of great circles.
