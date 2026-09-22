@@ -85,7 +85,9 @@ button in the title card computes the route. The title card's menu icon opens
 the options (smoothing window, layers, high-resolution coast). Results live in
 a drawer with a handle: it slides in from the right on wide screens and up
 from the bottom on phones, and the handle can be tapped or dragged to collapse
-or reopen it.
+or reopen it. On phones a full-screen button hides the browser bars (Android),
+and the site ships a web app manifest, so "Add to Home Screen" opens it
+standalone without any browser chrome (Android and iOS).
 
 When `site/data` changes, bump `DATA_VERSION` in `site/js/app.js` so browsers
 (and the site's year-long cache) refetch the files.

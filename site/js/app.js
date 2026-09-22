@@ -259,6 +259,22 @@ function lookAcross() {
 
 // ---------- UI wiring ----------
 $('go').addEventListener('click', lookAcross);
+// Full screen (Android Chrome and desktop browsers; iPhone Safari only allows it for video, so the
+// button is hidden there and the manifest's standalone mode is the way to lose the browser bars).
+{
+  const fs = $('fullscreen');
+  const root = document.documentElement;
+  const enabled = document.fullscreenEnabled || root.webkitRequestFullscreen;
+  if (!enabled) document.body.classList.add('no-fullscreen');
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const sync = () => fs.setAttribute('aria-pressed', String(isFull()));
+  fs.addEventListener('click', () => {
+    if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (root.requestFullscreen || root.webkitRequestFullscreen).call(root, { navigationUI: 'hide' });
+  });
+  document.addEventListener('fullscreenchange', sync);
+  document.addEventListener('webkitfullscreenchange', sync);
+}
 $('menu').addEventListener('click', () => {
   const open = $('options').classList.toggle('hidden') === false;
   $('menu').setAttribute('aria-expanded', String(open));

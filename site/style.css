@@ -36,6 +36,11 @@ body.panel-open.panel-collapsed #globe { right: var(--strip); }
 #hud { top: 16px; left: 16px; width: min(380px, calc(100vw - 32px)); z-index: 5; max-height: calc(100vh - 32px); overflow-y: auto; }
 .hud-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
 #hud h1 { font-family: var(--serif); font-weight: 600; font-size: 26px; margin: 0; letter-spacing: -0.01em; }
+.hud-buttons { display: inline-flex; gap: 2px; }
+.hud-buttons .touch-only { display: none; }
+@media (pointer: coarse) { .hud-buttons .touch-only { display: inline-flex; } }
+.icon-btn[aria-pressed="true"] { background: #f1ebe0; border-color: #d9d0c2; }
+body.no-fullscreen #fullscreen { display: none !important; }
 .icon-btn { background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 5px; color: var(--coast); display: inline-flex; line-height: 0; }
 .icon-btn:hover, .icon-btn[aria-expanded="true"] { background: #f1ebe0; border-color: #d9d0c2; }
 #hud .lede { margin: 0; color: var(--ink-soft); font-size: 13.5px; }

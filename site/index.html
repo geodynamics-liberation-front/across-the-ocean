@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fffcf7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Across">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Across the Ocean</title>
 <meta name="description" content="Stand on any shore, look straight out to sea, and find out what land is really across the ocean along a great circle.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,12 +29,17 @@
 <header id="hud" class="card">
   <div class="hud-title">
     <h1>Across the Ocean</h1>
+    <span class="hud-buttons">
+    <button id="fullscreen" class="icon-btn touch-only" aria-label="Full screen" aria-pressed="false" title="Full screen">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
     <button id="menu" class="icon-btn" aria-label="Options" aria-expanded="false" aria-controls="options" title="Options">
       <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
+    </span>
   </div>
   <p class="lede mouse-only">Drag to turn the globe, scroll to zoom. Hover the shore: the dot snaps to the coast and the arrow shows the direction straight out to sea. Click to follow that great circle until it meets land.</p>
-  <p class="lede touch-only">Two fingers turn the globe and pinch to zoom. Drag one finger to put the dot on a shore (it sits just above your fingertip), then tap <b>Look across</b>.</p>
+  <p class="lede touch-only">Two fingers turn the globe and pinch to zoom. Drag one finger to put the dot on a shore (it sits just above your fingertip), then tap <b>Look across</b>. For more room, use the full-screen button or add this page to your home screen.</p>
   <div id="hover" class="hover hidden">
     <div class="hover-place"><span id="hover-country">—</span></div>
     <div class="hover-coords mono"><span id="hover-latlon">—</span> · looking <span id="hover-bearing">—</span></div>
