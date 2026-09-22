@@ -1,7 +1,9 @@
-# Downloaded source datasets and the built site data. Regenerate with `make data`
-# (tools/fetch_data.sh downloads ~130 MB, tools/build_data.py writes site/data).
+# Downloaded source datasets, the built site data and the assembled site.
+# Regenerate with `make dist` (tools/fetch_data.sh downloads ~130 MB into
+# sources/, tools/build_data.py writes site/data/, dist/ is a copy of site/).
 /sources/
 /site/data/
+/dist/
 /dist/
 
 # Superseded originals kept locally only

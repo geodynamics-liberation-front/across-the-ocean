@@ -1,31 +1,28 @@
-# Across the Ocean
+# Across the Ocean — see PUBLISHING.md in the glf repository for the site contract.
 #
-#   make dist     build the data and assemble the publishable site in dist/
-#   make data     download the source datasets and build site/data
-#   make fetch    download only (sources/)
-#   make build    convert sources/ into site/data (needs numpy and pyshp)
-#   make serve    serve the site locally on http://localhost:8765/
-#   make clean    remove the built site data (sources are kept)
+#   make dist     download the source data, build site/data, and assemble dist/
+#   make data     download + build the data only (writes site/data/)
+#   make fetch    download only (sources/, existing files are kept)
+#   make serve    build dist/ and serve it on http://localhost:8000/
+#   make clean    remove dist/ and the generated site data (downloads are kept)
 
 PYTHON ?= python3
-PORT ?= 8765
+PORT ?= 8000
 
-.PHONY: dist data fetch build serve clean
+.PHONY: dist data fetch clean serve
 
 dist: data
 	rm -rf dist
 	cp -r site dist
 
-data: fetch build
+data: fetch
+	$(PYTHON) tools/build_data.py        # writes site/data/
 
 fetch:
-	tools/fetch_data.sh
-
-build:
-	$(PYTHON) tools/build_data.py
-
-serve:
-	$(PYTHON) -m http.server $(PORT) --directory site
+	tools/fetch_data.sh                  # downloads into sources/, keeps existing files
 
 clean:
 	rm -rf dist site/data
+
+serve: dist
+	$(PYTHON) -m http.server $(PORT) --directory dist
