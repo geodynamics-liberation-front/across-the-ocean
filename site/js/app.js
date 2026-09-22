@@ -108,7 +108,7 @@ function seaward(snap, km) {
 // ---------- results ----------
 const results = new Results({
   panel: $('results'), title: $('r-title'), summary: $('r-summary'), body: $('r-body'), canvas: $('worldmap'),
-  select: $('projection'), note: $('proj-note'), fly: $('r-fly'), back: $('r-back'), share: $('r-share'), close: $('r-close'), collapse: $('r-collapse'), expand: $('r-expand'), png: $('r-png'),
+  select: $('projection'), note: $('proj-note'), fly: $('r-fly'), back: $('r-back'), share: $('r-share'), close: $('r-close'), handle: $('r-handle'), png: $('r-png'),
 }, data.coast, {
   onFly: () => { const r = current; if (r) globe.flyAlong(r.coords, { scale: Math.max(globe.projection.scale(), 1800) }); },
   onBack: () => { const r = current; if (r) globe.flyAlong([...r.coords].reverse(), { scale: Math.max(globe.projection.scale(), 1800) }); },
@@ -224,8 +224,6 @@ function computeRoute(snap) {
   };
 }
 
-const COARSE = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-const HINT_HTML = COARSE ? 'Drag to place the point, hold still to look across' : 'Click to look across (or press <kbd>Space</kbd>)';
 let computing = false;
 function lookAcross() {
   const snap = globe.snap;
@@ -238,6 +236,7 @@ function lookAcross() {
   status('Calculating the route…');
   const hint = document.querySelector('.click-hint');
   if (hint) hint.textContent = 'Calculating…';
+  const go = $('go'); go.disabled = true; go.textContent = 'Calculating…';
   setTimeout(() => {
     const t0 = performance.now();
     let r = null;
@@ -245,7 +244,8 @@ function lookAcross() {
     finally {
       globe.setBusy(null);
       status('');
-      if (hint) hint.innerHTML = HINT_HTML;
+      if (hint) hint.innerHTML = 'Click to look across (or press <kbd>Space</kbd>)';
+      go.disabled = false; go.textContent = 'Look across';
       computing = false;
     }
     if (!r) { toast('Could not find land along that line'); return; }
@@ -258,8 +258,11 @@ function lookAcross() {
 }
 
 // ---------- UI wiring ----------
-{ const hint = document.querySelector('.click-hint'); if (hint) hint.innerHTML = HINT_HTML; }
-if (COARSE) { const lede = document.querySelector('#hud .lede'); if (lede) lede.textContent = 'Two fingers turn the globe and pinch to zoom. Drag one finger to place the point on the shore (it sits just above your fingertip); hold still to follow that great circle until it meets land.'; }
+$('go').addEventListener('click', lookAcross);
+$('menu').addEventListener('click', () => {
+  const open = $('options').classList.toggle('hidden') === false;
+  $('menu').setAttribute('aria-expanded', String(open));
+});
 document.addEventListener('keydown', (e) => {
   if (e.target && /input|select|textarea/i.test(e.target.tagName)) return;
   if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); lookAcross(); }

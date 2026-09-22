@@ -19,19 +19,21 @@
 </div>
 
 <header id="hud" class="card">
-  <h1>Across the Ocean</h1>
-  <p class="lede">Drag to turn the globe, scroll to zoom. Hover the shore: the dot snaps to the coast and the arrow shows the direction straight out to sea. Click to follow that great circle until it meets land.</p>
+  <div class="hud-title">
+    <h1>Across the Ocean</h1>
+    <button id="menu" class="icon-btn" aria-label="Options" aria-expanded="false" aria-controls="options" title="Options">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <p class="lede mouse-only">Drag to turn the globe, scroll to zoom. Hover the shore: the dot snaps to the coast and the arrow shows the direction straight out to sea. Click to follow that great circle until it meets land.</p>
+  <p class="lede touch-only">Two fingers turn the globe and pinch to zoom. Drag one finger to put the dot on a shore (it sits just above your fingertip), then tap <b>Look across</b>.</p>
   <div id="hover" class="hover hidden">
     <div class="hover-place"><span id="hover-country">—</span></div>
     <div class="hover-coords mono"><span id="hover-latlon">—</span> · looking <span id="hover-bearing">—</span></div>
-    <div class="hint click-hint">Click to look across (or press <kbd>Space</kbd>)</div>
+    <div class="hint click-hint mouse-only">Click to look across (or press <kbd>Space</kbd>)</div>
+    <button id="go" class="primary touch-only">Look across</button>
   </div>
-  <div id="status" class="status mono"></div>
-</header>
-
-<aside id="settings" class="card">
-  <details>
-    <summary>Options</summary>
+  <div id="options" class="options hidden">
     <label class="row"><span>Coast smoothing window</span>
       <input id="window" type="range" min="2" max="150" step="1" value="20"><output id="window-out" class="mono">20 km</output></label>
     <p class="hint">The seaward direction is the perpendicular to the general trend of the coast over this distance either side of the point. Small values hug every cove; large values follow the sweep of the coast.</p>
@@ -42,11 +44,12 @@
     <label class="row check"><input id="opt-hires" type="checkbox"> High-resolution coastline (19 MB, loads automatically when you zoom in)</label>
     <button id="north-up" class="secondary">North up</button>
     <p class="hint credits">Shorelines &amp; borders: GSHHG 2.3.7 (Wessel &amp; Smith 1996, LGPL). Countries and seas: Natural Earth. Places: GeoNames (CC BY 4.0). Rendering: WebGL2 + d3-geo.</p>
-  </details>
-</aside>
+  </div>
+  <div id="status" class="status mono"></div>
+</header>
 
 <section id="results" class="hidden" aria-live="polite">
-  <button id="r-expand" class="expand-strip" title="Show the results" aria-label="Show the results"><span>⟨ Results</span></button>
+  <div id="r-handle" class="drawer-handle" role="button" tabindex="0" aria-label="Show or hide the results"><span class="pill"></span><span class="label">Results</span></div>
   <div class="results-inner">
     <div class="results-head">
       <h2 id="r-title">Across the ocean</h2>
@@ -54,7 +57,6 @@
         <button id="r-fly" class="secondary" title="Turn the globe to the far shore">Fly there</button>
         <button id="r-back" class="secondary" title="Turn the globe back to the start">Back</button>
         <button id="r-share" class="secondary" title="Copy a link to this result">Copy link</button>
-        <button id="r-collapse" class="secondary" title="Collapse the panel" aria-label="Collapse the panel">⟩</button>
         <button id="r-close" class="secondary" aria-label="Close">✕</button>
       </div>
     </div>

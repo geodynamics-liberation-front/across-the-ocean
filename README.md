@@ -80,9 +80,12 @@ so the route reproduces exactly). With a mouse, drag to turn the globe, scroll
 to zoom, and click a point on the shore to compute a route (Space or Enter
 also work); Escape closes the panel. On a touch screen, two fingers turn the
 globe, pinch to zoom and twist; one finger places the point on the shore (the
-probe sits just above the fingertip so it stays visible) and holding still for
-about two thirds of a second computes the route, with a ring filling up around
-the point while you hold.
+probe sits just above the fingertip so it stays visible) and a "Look across"
+button in the title card computes the route. The title card's menu icon opens
+the options (smoothing window, layers, high-resolution coast). Results live in
+a drawer with a handle: it slides in from the right on wide screens and up
+from the bottom on phones, and the handle can be tapped or dragged to collapse
+or reopen it.
 
 When `site/data` changes, bump `DATA_VERSION` in `site/js/app.js` so browsers
 (and the site's year-long cache) refetch the files.

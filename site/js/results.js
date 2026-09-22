@@ -33,8 +33,7 @@ export class Results {
     this.els.back.addEventListener('click', () => hooks.onBack());
     this.els.share.addEventListener('click', () => hooks.onShare());
     this.els.close.addEventListener('click', () => this.hide());
-    this.els.collapse.addEventListener('click', () => this.setCollapsed(true));
-    this.els.expand.addEventListener('click', () => this.setCollapsed(false));
+    this.setupHandle();
     this.els.png.addEventListener('click', () => this.download());
     window.addEventListener('resize', () => { if (this.result) this.draw(); });
   }
@@ -43,6 +42,25 @@ export class Results {
     this.els.panel.classList.add('hidden');
     document.body.classList.remove('panel-open', 'panel-collapsed');
     this.hooks.onClose();
+  }
+
+  /** The drawer handle: click (or Enter/Space) toggles; a drag of 40 px toward the edge closes, away opens. */
+  setupHandle() {
+    const h = this.els.handle;
+    let drag = null;
+    const vertical = () => window.matchMedia('(max-width: 700px)').matches;
+    h.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; h.setPointerCapture(e.pointerId); });
+    h.addEventListener('pointerup', (e) => {
+      if (!drag || drag.id !== e.pointerId) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      drag = null;
+      const along = vertical() ? dy : dx;      // positive = toward the screen edge = closing
+      if (along > 40) this.setCollapsed(true);
+      else if (along < -40) this.setCollapsed(false);
+      else this.setCollapsed(!document.body.classList.contains('panel-collapsed'));
+    });
+    h.addEventListener('pointercancel', () => { drag = null; });
+    h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setCollapsed(!document.body.classList.contains('panel-collapsed')); } });
   }
 
   setCollapsed(collapsed) {
