@@ -76,8 +76,13 @@ roughly half.
 
 Results have shareable URLs (`#p=lat,lon&w=<smoothing km>&r=<coast resolution>`;
 a link made with the high-resolution coast loaded carries `r=h` and reloads it,
-so the route reproduces exactly). Click a point on the shore to compute a route
-(Space or Enter also work), Escape closes the panel.
+so the route reproduces exactly). With a mouse, drag to turn the globe, scroll
+to zoom, and click a point on the shore to compute a route (Space or Enter
+also work); Escape closes the panel. On a touch screen, two fingers turn the
+globe, pinch to zoom and twist; one finger places the point on the shore (the
+probe sits just above the fingertip so it stays visible) and holding still for
+about two thirds of a second computes the route, with a ring filling up around
+the point while you hold.
 
 When `site/data` changes, bump `DATA_VERSION` in `site/js/app.js` so browsers
 (and the site's year-long cache) refetch the files.

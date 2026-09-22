@@ -224,6 +224,8 @@ function computeRoute(snap) {
   };
 }
 
+const COARSE = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+const HINT_HTML = COARSE ? 'Drag to place the point, hold still to look across' : 'Click to look across (or press <kbd>Space</kbd>)';
 let computing = false;
 function lookAcross() {
   const snap = globe.snap;
@@ -243,7 +245,7 @@ function lookAcross() {
     finally {
       globe.setBusy(null);
       status('');
-      if (hint) hint.innerHTML = 'Click to look across (or press <kbd>Space</kbd>)';
+      if (hint) hint.innerHTML = HINT_HTML;
       computing = false;
     }
     if (!r) { toast('Could not find land along that line'); return; }
@@ -256,6 +258,8 @@ function lookAcross() {
 }
 
 // ---------- UI wiring ----------
+{ const hint = document.querySelector('.click-hint'); if (hint) hint.innerHTML = HINT_HTML; }
+if (COARSE) { const lede = document.querySelector('#hud .lede'); if (lede) lede.textContent = 'Two fingers turn the globe and pinch to zoom. Drag one finger to place the point on the shore (it sits just above your fingertip); hold still to follow that great circle until it meets land.'; }
 document.addEventListener('keydown', (e) => {
   if (e.target && /input|select|textarea/i.test(e.target.tagName)) return;
   if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); lookAcross(); }

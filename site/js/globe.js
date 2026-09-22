@@ -15,6 +15,9 @@ const riverClass = () => 'river';
 
 const ORDER = ['c', 'l', 'i', 'h'];
 const ROUTE_ANIM_MS = 900;
+const TOUCH_OFFSET = 44;        // px: the coast probe sits this far above the fingertip so it stays visible
+const PRESS_MS = 650;           // hold still this long to compute the route
+const PRESS_SLOP = 12;          // px of movement allowed during a long press
 
 export class Globe {
   constructor(opts) {
@@ -45,6 +48,7 @@ export class Globe {
     if (window.ResizeObserver) new ResizeObserver(() => this.resize()).observe(this.baseCanvas.parentElement);
     this.setupZoom();
     this.setupPointer();
+    this.setupTouch();
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   }
@@ -90,7 +94,7 @@ export class Globe {
       this.needOverlay = true;
     }
     if (this.needOverlay) { this.needOverlay = false; this.renderOverlay(); }
-    if (this.busy || (this.route && performance.now() - this.routeStart < ROUTE_ANIM_MS)) this.needOverlay = true;
+    if (this.busy || this.press || (this.route && performance.now() - this.routeStart < ROUTE_ANIM_MS)) this.needOverlay = true;
     requestAnimationFrame(this.loop);
   }
 
@@ -187,6 +191,16 @@ export class Globe {
       if (ps) drawMarker(ctx, ps, COLORS.start, 'Start');
       if (pe && progress >= 1) drawMarker(ctx, pe, COLORS.end, 'Across the ocean');
     }
+    if (this.press && this.snap) {
+      // a ring fills up around the point while a finger holds still
+      const pt = projectVisible(proj, [this.snap.lon, this.snap.lat]);
+      const f = Math.min(1, (performance.now() - this.press.t0) / this.press.ms);
+      if (pt) {
+        ctx.beginPath(); ctx.arc(pt[0], pt[1], 16, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2);
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
+        ctx.lineWidth = 2.5; ctx.strokeStyle = COLORS.route; ctx.stroke();
+      }
+    }
     if (this.busy) {
       // pulsing rings around the clicked point while the route is computed
       const pt = projectVisible(proj, this.busy.lonlat);
@@ -266,6 +280,7 @@ export class Globe {
     }
     this.zoom = d3.zoom()
       .scaleExtent([this.baseScale * 0.45, 8e5])
+      .touchable(() => false)   // touch gestures are handled in setupTouch()
       .clickDistance(4)   // a click that wobbles a few pixels is still a click, not a drag
       .filter(e => !e.ctrlKey || e.type === 'wheel')
       .on('start', function (e) { tl = 0; zoomstarted.call(this, e); self.overlayCanvas.classList.add('grabbing'); })
@@ -286,12 +301,104 @@ export class Globe {
       this.pointer = [e.offsetX, e.offsetY];
       if (!this.interacting) this.scheduleSnap();
     });
-    c.addEventListener('pointerleave', () => { this.pointer = null; this.setSnap(null); });
+    c.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch') return; this.pointer = null; this.setSnap(null); });
     c.addEventListener('click', (e) => {
+      // a tap still produces a click even when its pointerdown was cancelled: touch has its own gestures
+      if (e.pointerType === 'touch' || performance.now() - this.lastTouch < 800) return;
       this.pointer = [e.offsetX, e.offsetY];
       this.updateSnap(true);
       if (this.snap) this.onClick(this.snap);
     });
+  }
+
+  /**
+   * Touch: one finger places the coast point (probe just above the fingertip) and a long press
+   * without movement computes the route; two fingers turn the globe, pinch to zoom and twist.
+   */
+  setupTouch() {
+    const c = this.overlayCanvas;
+    const proj = this.projection;
+    const touches = new Map();          // pointerId -> [x, y]
+    let gesture = null;                 // two-finger state
+    let press = null;                   // long-press state
+    const pts = () => [...touches.values()];
+    const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]);
+
+    const cancelPress = () => { if (press) { clearTimeout(press.timer); press = null; this.press = null; this.needOverlay = true; } };
+    const place = (x, y) => { this.pointer = [x, y - TOUCH_OFFSET]; this.updateSnap(true); };
+    const beginPress = (id, x, y) => {
+      cancelPress();
+      press = { id, x0: x, y0: y, t0: performance.now(), timer: null };
+      press.timer = setTimeout(() => {
+        if (!press || touches.size !== 1) return;
+        press = null; this.press = null;
+        place(x, y);
+        if (this.snap) this.onClick(this.snap);
+      }, PRESS_MS);
+      this.press = { t0: press.t0, ms: PRESS_MS };
+      this.needOverlay = true;
+    };
+    const beginGesture = () => {
+      const [a, b] = pts();
+      const m = this.clampToGlobe(mid(a, b));
+      gesture = { v0: versor.cartesian(proj.invert(m)), r0: proj.rotate(), q0: versor(proj.rotate()), d0: dist(a, b), s0: proj.scale(), a0: ang(a, b) };
+      this.interacting = true;
+      this.setSnap(null);
+      c.classList.add('grabbing');
+    };
+    const moveGesture = () => {
+      const [a, b] = pts();
+      const ext = this.zoom.scaleExtent();
+      proj.scale(Math.max(ext[0], Math.min(ext[1], gesture.s0 * dist(a, b) / gesture.d0)));
+      const m = this.clampToGlobe(mid(a, b));
+      const v1 = versor.cartesian(proj.rotate(gesture.r0).invert(m));
+      const delta = versor.delta(gesture.v0, v1);
+      let q1 = versor.multiply(gesture.q0, delta);
+      const d = (ang(a, b) - gesture.a0) / 2, sn = -Math.sin(d), cs = Math.sign(Math.cos(d));
+      q1 = versor.multiply([Math.sqrt(1 - sn * sn), 0, 0, cs * sn], q1);
+      proj.rotate(versor.rotation(q1));
+      if (delta[0] < 0.7) beginGesture();
+      this.invalidate('low');
+    };
+    const endGesture = () => {
+      gesture = null;
+      this.interacting = false;
+      c.classList.remove('grabbing');
+      this.syncZoom();
+      this.invalidate('high');
+    };
+
+    c.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      this.lastTouch = performance.now();
+      e.preventDefault();                       // no compatibility mouse events
+      c.setPointerCapture(e.pointerId);
+      touches.set(e.pointerId, [e.offsetX, e.offsetY]);
+      if (touches.size === 1) { place(e.offsetX, e.offsetY); beginPress(e.pointerId, e.offsetX, e.offsetY); }
+      else if (touches.size === 2) { cancelPress(); beginGesture(); }
+      else if (gesture) endGesture();
+    });
+    c.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'touch' || !touches.has(e.pointerId)) return;
+      touches.set(e.pointerId, [e.offsetX, e.offsetY]);
+      if (touches.size === 2 && gesture) moveGesture();
+      else if (touches.size === 1) {
+        if (press && Math.hypot(e.offsetX - press.x0, e.offsetY - press.y0) > PRESS_SLOP) cancelPress();
+        if (!press) place(e.offsetX, e.offsetY);
+      }
+    });
+    const up = (e) => {
+      if (e.pointerType !== 'touch' || !touches.has(e.pointerId)) return;
+      this.lastTouch = performance.now();
+      touches.delete(e.pointerId);
+      if (gesture && touches.size < 2) endGesture();
+      if (press && press.id === e.pointerId) cancelPress();   // a tap or a short hold just leaves the point placed
+      if (touches.size === 1 && !gesture) { const [x, y] = pts()[0]; place(x, y); }
+    };
+    c.addEventListener('pointerup', up);
+    c.addEventListener('pointercancel', up);
   }
 
   scheduleSnap() {
