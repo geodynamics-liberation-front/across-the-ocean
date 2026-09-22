@@ -102,15 +102,17 @@ dl.facts a { color: var(--coast); }
 
 @media (max-width: 700px) {
   :root { --strip: 30px; }
-  #hud { width: calc(100vw - 32px); padding: 10px 12px; max-height: 45vh; }
+  #hud { width: calc(100vw - 32px); padding: 10px 12px; max-height: 45%; }
   #hud .lede { font-size: 12.5px; }
   body.panel-open #hud .lede { display: none; }   /* give the globe back its room once results are showing */
   #hud h1 { font-size: 20px; }
   .hover-place { font-size: 16px; }
-  #results { width: 100vw; top: 40vh; transition: top .25s ease; flex-direction: column; box-shadow: 0 -8px 30px rgba(30,42,53,0.2); }
-  body.panel-open #globe { right: 0; bottom: 60vh; }
-  body.panel-open.panel-collapsed #globe { right: 0; bottom: var(--strip); }
-  body.panel-collapsed #results { width: 100vw; top: calc(100vh - var(--strip)); }
+  /* Anchored to the bottom with percentage heights: on phones 100vh includes the space under the
+     browser's address bar, so vh-based tops would push the sheet (and the collapsed bar) off screen. */
+  #results { width: 100vw; top: auto; bottom: 0; height: 60%; transition: height .25s ease; flex-direction: column; box-shadow: 0 -8px 30px rgba(30,42,53,0.2); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body.panel-open #globe { right: 0; bottom: 60%; }
+  body.panel-open.panel-collapsed #globe { right: 0; bottom: calc(var(--strip) + env(safe-area-inset-bottom, 0px)); }
+  body.panel-collapsed #results { width: 100vw; height: calc(var(--strip) + env(safe-area-inset-bottom, 0px)); }
   .drawer-handle { flex: 0 0 var(--strip); flex-direction: row; gap: 12px; border-right: 0; border-bottom: 1px solid #e3dccf; }
   .drawer-handle .pill { width: 44px; height: 5px; }
   .drawer-handle .label { writing-mode: horizontal-tb; transform: none; }
