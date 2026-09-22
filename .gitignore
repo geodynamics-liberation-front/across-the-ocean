@@ -2,6 +2,7 @@
 # (tools/fetch_data.sh downloads ~130 MB, tools/build_data.py writes site/data).
 /sources/
 /site/data/
+/dist/
 
 # Superseded originals kept locally only
 /attic/

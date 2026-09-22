@@ -33,7 +33,7 @@ tools/
   fetch_data.sh  downloads the source datasets into sources/ (not in git)
   build_data.py  converts sources/ into site/data/
   requirements.txt
-Makefile         make data | fetch | build | serve | clean
+Makefile         make dist | data | fetch | build | serve | clean
 ```
 
 The data directories (`sources/`, `site/data/`) are ignored by git and
@@ -56,6 +56,9 @@ safe to re-run; existing files are kept. `make build` writes `site/data/`.
 ```
 make serve          # python3 -m http.server 8765 --directory site
 ```
+
+`make dist` builds the data and copies `site/` to `dist/`, which is how the
+site is published at https://therealglf.org/projects/across-the-ocean/.
 
 then open http://localhost:8765/. The JavaScript libraries (d3 v7,
 d3-geo-projection v4, versor) are loaded from cdn.jsdelivr.net, and the fonts

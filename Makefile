@@ -1,5 +1,6 @@
 # Across the Ocean
 #
+#   make dist     build the data and assemble the publishable site in dist/
 #   make data     download the source datasets and build site/data
 #   make fetch    download only (sources/)
 #   make build    convert sources/ into site/data (needs numpy and pyshp)
@@ -9,7 +10,11 @@
 PYTHON ?= python3
 PORT ?= 8765
 
-.PHONY: data fetch build serve clean
+.PHONY: dist data fetch build serve clean
+
+dist: data
+	rm -rf dist
+	cp -r site dist
 
 data: fetch build
 
@@ -23,4 +28,4 @@ serve:
 	$(PYTHON) -m http.server $(PORT) --directory site
 
 clean:
-	rm -rf site/data
+	rm -rf dist site/data
