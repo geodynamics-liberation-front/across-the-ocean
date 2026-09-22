@@ -85,7 +85,7 @@ function loadHiRes() {
 let hoverTimer = null;
 function showHover(snap) {
   const box = $('hover');
-  if (!snap) { box.classList.add('hidden'); return; }
+  if (!snap || globe.mode !== 'select') { box.classList.add('hidden'); return; }
   box.classList.remove('hidden');
   $('hover-latlon').textContent = fmtLatLon(snap.lon, snap.lat);
   $('hover-bearing').textContent = `${compass(snap.bearing)} (${snap.bearing.toFixed(0)}°)`;
@@ -113,7 +113,14 @@ const results = new Results({
   onFly: () => { const r = current; if (r) globe.flyAlong(r.coords, { scale: Math.max(globe.projection.scale(), 1800) }); },
   onBack: () => { const r = current; if (r) globe.flyAlong([...r.coords].reverse(), { scale: Math.max(globe.projection.scale(), 1800) }); },
   onShare: () => { navigator.clipboard?.writeText(location.href).then(() => toast('Link copied')); },
-  onClose: () => { current = null; globe.setRoute(null); history.replaceState(null, '', location.pathname); },
+  onClose: () => {
+    // back to selection mode: no route, and the point follows the pointer again
+    current = null;
+    globe.setRoute(null);
+    globe.setMode('select');
+    showHover(globe.snap);
+    history.replaceState(null, '', location.pathname);
+  },
 });
 results.layers = { get coast() { return data.coast.l || data.coast.c; }, get borders() { return data.borders.l || data.borders.c; } };
 
@@ -227,6 +234,7 @@ function computeRoute(snap) {
 let computing = false;
 function lookAcross() {
   const snap = globe.snap;
+  if (globe.mode !== 'select') return;
   if (!snap) { toast('Click a point on the coastline'); return; }
   if (computing) return;
   computing = true;
@@ -251,6 +259,8 @@ function lookAcross() {
     if (!r) { toast('Could not find land along that line'); return; }
     current = r;
     globe.setRoute(r);
+    globe.setMode('results');
+    $('hover').classList.add('hidden');
     results.show(r);
     location.hash = `p=${snap.lat.toFixed(5)},${snap.lon.toFixed(5)}&w=${options.windowKm}&r=${snap.res}`;
     console.log(`route computed in ${(performance.now() - t0).toFixed(0)} ms`, r);

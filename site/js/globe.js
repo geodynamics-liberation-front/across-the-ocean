@@ -31,6 +31,7 @@ export class Globe {
     catch (err) { console.warn('WebGL2 unavailable, using the canvas renderer:', err.message); this.glr = null; this.baseCtx = this.baseCanvas.getContext('2d'); }
     this.ovCtx = this.overlayCanvas.getContext('2d');
     this.projection = d3.geoOrthographic().clipAngle(90).precision(0.7).rotate([30, -25, 0]);
+    this.mode = 'select';              // 'select': the point follows the pointer; 'results': a route is shown
     this.route = null;
     this.routeStart = 0;      // time the current route was set, for the grow-in animation
     this.busy = null;         // { lonlat, t0 } while a route is being computed
@@ -206,7 +207,7 @@ export class Globe {
         ctx.fillStyle = COLORS.route; ctx.fillText('calculating…', pt[0] + 14, pt[1]);
       }
     }
-    if (this.snap && !this.interacting) {
+    if (this.snap && !this.interacting && this.mode === 'select') {
       const s = this.snap;
       const pt = projectVisible(proj, [s.lon, s.lat]);
       if (pt) {
@@ -286,14 +287,14 @@ export class Globe {
   setupPointer() {
     const c = this.overlayCanvas;
     c.addEventListener('pointermove', (e) => {
-      if (e.pointerType === 'touch') return;
+      if (e.pointerType === 'touch' || this.mode !== 'select') return;
       this.pointer = [e.offsetX, e.offsetY];
       if (!this.interacting) this.scheduleSnap();
     });
-    c.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch') return; this.pointer = null; this.setSnap(null); });
+    c.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch' || this.mode !== 'select') return; this.pointer = null; this.setSnap(null); });
     c.addEventListener('click', (e) => {
       // a tap still produces a click even when its pointerdown was cancelled: touch has its own gestures
-      if (e.pointerType === 'touch' || performance.now() - this.lastTouch < 800) return;
+      if (e.pointerType === 'touch' || performance.now() - this.lastTouch < 800 || this.mode !== 'select') return;
       this.pointer = [e.offsetX, e.offsetY];
       this.updateSnap(true);
       if (this.snap) this.onClick(this.snap);
@@ -314,7 +315,7 @@ export class Globe {
     const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
     const ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]);
 
-    const place = (x, y) => { this.pointer = [x, y - TOUCH_OFFSET]; this.updateSnap(true); };
+    const place = (x, y) => { if (this.mode !== 'select') return; this.pointer = [x, y - TOUCH_OFFSET]; this.updateSnap(true); };
     const beginGesture = () => {
       const [a, b] = pts();
       const m = this.clampToGlobe(mid(a, b));
@@ -420,6 +421,14 @@ export class Globe {
   }
 
   setRoute(route) { this.route = route; this.routeStart = performance.now(); this.needOverlay = true; }
+
+  /** Switch between picking a point ('select') and showing a route ('results'). */
+  setMode(mode) {
+    if (this.mode === mode) return;
+    this.mode = mode;
+    if (mode === 'select') this.updateSnap(true);   // pick up wherever the pointer is now
+    this.needOverlay = true;
+  }
 
   /** Show (or clear) the "calculating" indicator at a point, and paint it right away. */
   setBusy(lonlat) {

@@ -76,9 +76,13 @@ roughly half.
 
 Results have shareable URLs (`#p=lat,lon&w=<smoothing km>&r=<coast resolution>`;
 a link made with the high-resolution coast loaded carries `r=h` and reloads it,
-so the route reproduces exactly). With a mouse, drag to turn the globe, scroll
-to zoom, and click a point on the shore to compute a route (Space or Enter
-also work); Escape closes the panel. On a touch screen, two fingers turn the
+so the route reproduces exactly). The page has two modes. In selection mode
+the point on the shore follows the pointer and the title card shows its
+location and seaward direction. Computing a route switches to results mode:
+the route is drawn, the point stops following the pointer, and the title card
+shrinks to its title. Closing the results drawer (✕ or Escape) returns to
+selection mode. With a mouse, drag to turn the globe, scroll to zoom, and
+click a point on the shore to compute a route (Space or Enter also work). On a touch screen, two fingers turn the
 globe, pinch to zoom and twist; one finger places the point on the shore (the
 probe sits just above the fingertip so it stays visible) and a "Look across"
 button in the title card computes the route. The title card's menu icon opens
