@@ -1,0 +1,15 @@
+# Downloaded source datasets and the built site data. Regenerate with `make data`
+# (tools/fetch_data.sh downloads ~130 MB, tools/build_data.py writes site/data).
+/sources/
+/site/data/
+
+# Superseded originals kept locally only
+/attic/
+
+# Python / node / editor leftovers
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.DS_Store
+*.part
