@@ -2,6 +2,7 @@
 #
 #   make dist     download the source data, build site/data, and assemble dist/
 #   make data     download + build the data only (writes site/data/)
+#   make build    convert sources/ into site/data/ without downloading
 #   make fetch    download only (sources/, existing files are kept)
 #   make serve    build dist/ and serve it on http://localhost:8000/
 #   make clean    remove dist/ and the generated site data (downloads are kept)
@@ -9,13 +10,15 @@
 PYTHON ?= python3
 PORT ?= 8000
 
-.PHONY: dist data fetch clean serve
+.PHONY: dist data build fetch clean serve
 
 dist: data
 	rm -rf dist
 	cp -r site dist
 
-data: fetch
+data: fetch build
+
+build:
 	$(PYTHON) tools/build_data.py        # writes site/data/
 
 fetch:
