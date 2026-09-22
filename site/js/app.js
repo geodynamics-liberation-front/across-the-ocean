@@ -108,11 +108,11 @@ function seaward(snap, km) {
 // ---------- results ----------
 const results = new Results({
   panel: $('results'), title: $('r-title'), summary: $('r-summary'), body: $('r-body'), canvas: $('worldmap'),
-  select: $('projection'), note: $('proj-note'), fly: $('r-fly'), back: $('r-back'), share: $('r-share'), close: $('r-close'), handle: $('r-handle'), png: $('r-png'),
+  select: $('projection'), note: $('proj-note'), fly: $('r-fly'), back: $('r-back'), share: $('r-share'), shareImage: $('r-share-image'), close: $('r-close'), handle: $('r-handle'), png: $('r-png'),
 }, data.coast, {
   onFly: () => { const r = current; if (r) globe.flyAlong(r.coords, { scale: Math.max(globe.projection.scale(), 1800) }); },
   onBack: () => { const r = current; if (r) globe.flyAlong([...r.coords].reverse(), { scale: Math.max(globe.projection.scale(), 1800) }); },
-  onShare: () => { navigator.clipboard?.writeText(location.href).then(() => toast('Link copied')); },
+  toast,
   onClose: () => {
     // back to selection mode: no route, and the point follows the pointer again
     current = null;

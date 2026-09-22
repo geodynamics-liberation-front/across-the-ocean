@@ -69,14 +69,21 @@
       <div class="results-actions">
         <button id="r-fly" class="secondary" title="Turn the globe to the far shore">Fly there</button>
         <button id="r-back" class="secondary" title="Turn the globe back to the start">Back</button>
-        <button id="r-share" class="secondary" title="Copy a link to this result">Copy link</button>
-        <button id="r-close" class="secondary" aria-label="Close">✕</button>
+        <button id="r-share" class="secondary icon" title="Share this result" aria-label="Share this result">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="r-share-image" class="secondary icon" title="Share the map as an image" aria-label="Share the map as an image">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="9.5" r="1.8" fill="currentColor"/><path d="M4 18l5-5 3 3 3-3 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="r-png" class="secondary icon" title="Download the map as a PNG" aria-label="Download the map as a PNG">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="r-close" class="secondary" title="Clear the route and pick a new point">Reset</button>
       </div>
     </div>
     <p id="r-summary" class="summary"></p>
     <div class="map-tools">
       <label>Projection <select id="projection"></select></label>
-      <button id="r-png" class="secondary">Download PNG</button>
     </div>
     <p id="proj-note" class="hint"></p>
     <canvas id="worldmap"></canvas>

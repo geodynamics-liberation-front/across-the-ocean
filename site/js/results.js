@@ -22,7 +22,7 @@ export class Results {
   constructor(els, layers, hooks) {
     this.els = els;           // { panel, title, summary, body, canvas, select, note, fly, back, share, close, png }
     this.layers = layers;     // { coast, borders } for the world map (low resolution)
-    this.hooks = hooks;       // { onFly, onBack, onShare, onClose }
+    this.hooks = hooks;       // { onFly, onBack, onClose, toast }
     this.projId = 'naturalearth';
     this.result = null;
     for (const p of PROJECTIONS) {
@@ -31,7 +31,8 @@ export class Results {
     this.els.select.addEventListener('change', () => { this.projId = this.els.select.value; this.draw(); });
     this.els.fly.addEventListener('click', () => hooks.onFly());
     this.els.back.addEventListener('click', () => hooks.onBack());
-    this.els.share.addEventListener('click', () => hooks.onShare());
+    this.els.share.addEventListener('click', () => this.shareLink());
+    this.els.shareImage.addEventListener('click', () => this.shareImage());
     this.els.close.addEventListener('click', () => this.hide());
     this.setupHandle();
     this.els.png.addEventListener('click', () => this.download());
@@ -124,13 +125,104 @@ export class Results {
     if (pe) drawMarker(ctx, pe, COLORS.end, r.end.country ? r.end.country.name : 'Across', { r: 4.5, fontSize: 11, left: !left });
   }
 
-  download() {
+  // ---------- sharing ----------
+
+  /** Plain text for social media: the summary sentence, the hashtag, and the link. */
+  shareText() {
     const r = this.result;
-    if (!r) return;
+    const name = (c) => c ? c.name : 'unknown country';
+    return `Standing on the shore${r.start.city ? ` near ${r.start.city.name}` : ''} in ${name(r.start.country)} and looking straight out to sea, ` +
+      `the first land you'd reach is ${name(r.end.country)}${r.end.city ? `, near ${r.end.city.name}` : ''}, ${fmtKm(r.distKm)} away. #AcrossTheOcean`;
+  }
+
+  fileName() {
+    const r = this.result;
+    return `across-the-ocean-${r.start.lonlat[1].toFixed(2)}_${r.start.lonlat[0].toFixed(2)}.png`;
+  }
+
+  async shareLink() {
+    if (!this.result) return;
+    const text = this.shareText(), url = location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Across the Ocean', text, url }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    try { await copyText(`${text}\n${url}`); this.hooks.toast('Link and text copied'); }
+    catch { this.showCopyBox(`${text}\n${url}`); }
+  }
+
+  /** Last resort when nothing can write the clipboard: show the text selected, ready to copy by hand. */
+  showCopyBox(text) {
+    let box = document.getElementById('copy-box');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'copy-box'; box.className = 'copy-box';
+      box.innerHTML = '<p class="hint">Copy this to share it:</p><textarea readonly rows="4"></textarea><button class="secondary" type="button">Done</button>';
+      box.querySelector('button').addEventListener('click', () => box.remove());
+      this.els.summary.insertAdjacentElement('afterend', box);
+    }
+    const ta = box.querySelector('textarea');
+    ta.value = text; ta.focus(); ta.select();
+  }
+
+  /** Share the map as a PNG (native share sheet where available, else clipboard, else download). */
+  async shareImage() {
+    if (!this.result) return;
+    const blob = await this.composeImage();
+    const file = new File([blob], this.fileName(), { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'Across the Ocean', text: this.shareText(), url: location.href }); return; }
+      catch (e) { if (e.name === 'AbortError') return; }
+    }
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); this.hooks.toast('Image copied'); return; }
+      catch { /* fall through to download */ }
+    }
+    this.saveBlob(blob);
+    this.hooks.toast('Image downloaded');
+  }
+
+  async download() {
+    if (!this.result) return;
+    this.saveBlob(await this.composeImage());
+  }
+
+  saveBlob(blob) {
     const a = document.createElement('a');
-    a.download = `across-the-ocean-${r.start.lonlat[1].toFixed(2)}_${r.start.lonlat[0].toFixed(2)}.png`;
-    a.href = this.els.canvas.toDataURL('image/png');
+    a.download = this.fileName();
+    a.href = URL.createObjectURL(blob);
     a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  }
+
+  /** The results map plus a caption band: title, summary and link. */
+  composeImage() {
+    const map = this.els.canvas, r = this.result;
+    const dpr = window.devicePixelRatio || 1;
+    const W = map.width, pad = 18 * dpr;
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    const title = this.els.title.textContent;
+    const summary = this.els.summary.textContent.replace(/\s+/g, ' ').trim();
+    const url = location.href;
+    const titleFont = `600 ${22 * dpr}px 'Fraunces', Georgia, serif`;
+    const bodyFont = `${13 * dpr}px 'IBM Plex Sans', system-ui, sans-serif`;
+    const smallFont = `${11 * dpr}px 'IBM Plex Mono', ui-monospace, monospace`;
+    ctx.font = bodyFont;
+    const lines = wrapText(ctx, summary, W - 2 * pad);
+    const lineH = 18 * dpr;
+    const band = pad + 28 * dpr + lines.length * lineH + 8 * dpr + 16 * dpr + pad;
+    c.width = W; c.height = map.height + band;
+    ctx.fillStyle = '#fffcf7'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(map, 0, 0);
+    let y = map.height + pad;
+    ctx.fillStyle = '#1e2a35'; ctx.textBaseline = 'top';
+    ctx.font = titleFont; ctx.fillText(title, pad, y); y += 30 * dpr;
+    ctx.font = bodyFont; ctx.fillStyle = '#1e2a35';
+    for (const line of lines) { ctx.fillText(line, pad, y); y += lineH; }
+    y += 8 * dpr;
+    ctx.font = smallFont; ctx.fillStyle = '#55697a'; ctx.fillText(url, pad, y);
+    return new Promise((resolve) => c.toBlob(resolve, 'image/png'));
   }
 
   renderText(r) {
@@ -183,6 +275,31 @@ export class Results {
     groups.push(`<p class="hint credits">Shorelines: GSHHG 2.3.7 (${r.res === 'h' ? 'high' : r.res === 'i' ? 'intermediate' : 'low'} resolution used for this route). Country and sea names: Natural Earth. Places: GeoNames. Distances use a sphere of radius 6371 km.</p>`);
     this.els.body.innerHTML = groups.join('');
   }
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' '), lines = [];
+  let line = '';
+  for (const w of words) {
+    const t = line ? `${line} ${w}` : w;
+    if (ctx.measureText(t).width > maxWidth && line) { lines.push(line); line = w; }
+    else line = t;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/** Copy text even on plain http, where navigator.clipboard is unavailable. */
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand && document.execCommand('copy');
+    ta.remove();
+    ok ? resolve() : reject(new Error('copy failed'));
+  });
 }
 
 function placeGroup(title, color, pl, r) {
