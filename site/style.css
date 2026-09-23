@@ -69,8 +69,11 @@ button.secondary:hover { background: #f1f5f8; }
 
 .hint { color: var(--ink-soft); font-size: 12px; margin: 4px 0 8px; }
 .credits { border-top: 1px solid rgba(61,90,115,0.18); padding-top: 8px; margin-top: 10px; }
-.glf { margin-top: 6px; }
-.glf a { color: var(--coast); }
+/* Floating attribution over the globe, Google-Maps style */
+.attribution { position: absolute; left: 12px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 4; font-size: 11.5px; line-height: 1.3; color: var(--ink-soft); background: rgba(255, 252, 247, 0.82); backdrop-filter: blur(6px); border-radius: 6px; padding: 3px 9px; box-shadow: 0 1px 3px rgba(30, 42, 53, 0.12); white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
+.attribution a { color: var(--coast); text-decoration: none; }
+.attribution a:hover { text-decoration: underline; }
+.credits a { color: var(--coast); }
 #north-up { margin-top: 6px; }
 
 /* Results drawer: slides in from the right on wide screens, up from the bottom on phones. */

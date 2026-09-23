@@ -273,7 +273,6 @@ export class Results {
     ] : [['Following the parallel', 'this line of latitude circles the globe without touching land']]));
 
     groups.push(`<p class="hint credits">Shorelines: GSHHG 2.3.7 (${r.res === 'h' ? 'high' : r.res === 'i' ? 'intermediate' : 'low'} resolution used for this route). Country and sea names: Natural Earth. Places: GeoNames. Distances use a sphere of radius 6371 km.</p>`);
-    groups.push('<p class="hint glf">A <a href="https://therealglf.org/">Geodynamics Liberation Front</a> project. Source and build instructions on <a href="https://github.com/geodynamics-liberation-front/across-the-ocean">GitHub</a>.</p>');
     this.els.body.innerHTML = groups.join('');
   }
 }

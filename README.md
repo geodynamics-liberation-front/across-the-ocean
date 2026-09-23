@@ -154,8 +154,9 @@ coast. The Antarctic ice front (GSHHG level 5) is used as the Antarctic coast.
 
 A [Geodynamics Liberation Front](https://therealglf.org/) project, published
 at https://therealglf.org/projects/across-the-ocean/. The page carries this
-attribution in its options panel (menu icon in the title card) and at the foot
-of every results drawer, per the site's publishing contract.
+attribution as a small floating label at the bottom-left of the globe and in
+its options panel (menu icon in the title card), per the site's publishing
+contract.
 
 ## Data credits
 
