@@ -1,6 +1,6 @@
 // Across the Ocean: wiring, data loading and the route computation.
 import { fetchBuffer, parseGSHB, buildCoastIndex, nearestCoast } from './gshb.js';
-import { xyz, lonlat, dirFromBearing, greatCircleHits, parallelHits, greatCirclePoints, pointAlong, bearingOfDir, norm, cross, dot, angle, R_KM, DEG, TAU, fmtLatLon, compass } from './geo.js';
+import { xyz, lonlat, dirFromBearing, greatCircleHits, parallelHits, greatCirclePoints, pointAlong, bearingOfDir, norm, cross, dot, angle, R_KM, DEG, TAU, fmtLatLon, fmtBearing, compass } from './geo.js';
 import { Countries, Oceans, Cities } from './lookup.js';
 import { Globe } from './globe.js';
 import { Results } from './results.js';
@@ -8,7 +8,7 @@ import { Results } from './results.js';
 const $ = (id) => document.getElementById(id);
 const data = { coast: {}, borders: {}, rivers: {}, index: {} };
 const lookups = { countries: null, oceans: null, cities: null };
-const options = { fill: true, graticule: true, borders2: false, rivers: false, windowKm: 20 };
+const options = { fill: true, graticule: true, borders2: false, rivers: false, windowKm: 20, bearing: null }; // bearing: null = perpendicular to the coast
 const loading = new Map();
 const DATA_VERSION = '2026-09-21b'; // bump when files in data/ change, so browsers refetch them
 let hiResRequested = null; // promise once the high-resolution coast has been requested
@@ -88,7 +88,7 @@ function showHover(snap) {
   if (!snap || globe.mode !== 'select') { box.classList.add('hidden'); return; }
   box.classList.remove('hidden');
   $('hover-latlon').textContent = fmtLatLon(snap.lon, snap.lat);
-  $('hover-bearing').textContent = `${compass(snap.bearing)} (${snap.bearing.toFixed(0)}°)`;
+  $('hover-bearing').textContent = `${compass(snap.bearing)} (${options.bearing == null ? snap.bearing.toFixed(0) : fmtBearing(snap.bearing)}°)`;
   clearTimeout(hoverTimer);
   hoverTimer = setTimeout(() => {
     if (!lookups.countries || globe.snap !== snap) return;
@@ -118,6 +118,7 @@ const results = new Results({
     current = null;
     globe.setRoute(null);
     globe.setMode('select');
+    setBearing(null);   // Reset also returns the direction to the coast perpendicular
     showHover(globe.snap);
     history.replaceState(null, '', location.pathname);
   },
@@ -142,6 +143,7 @@ function computeRoute(snap) {
   const g = snap.g, res = snap.res;
   const P = snap.xyz;
   const bearing = snap.bearing;
+  const customBearing = options.bearing != null;
   const d = dirFromBearing(snap.lon, snap.lat, bearing);
   const hits = greatCircleHits(g, P, d);
   const eps = 0.15 / R_KM;
@@ -149,7 +151,9 @@ function computeRoute(snap) {
   for (const h of hits) {
     if (h.alpha <= eps) continue;
     if (!h.entry) {
-      if (!end && h.alpha * R_KM > 3 && !warning) warning = `The seaward perpendicular runs over land for ${Math.round(h.alpha * R_KM)} km before reaching open water (the coast here is very irregular). Try a smaller smoothing window, or pick a spot nearby.`;
+      if (!end && h.alpha * R_KM > 3 && !warning) warning = customBearing
+        ? `That direction runs over land for ${Math.round(h.alpha * R_KM)} km before reaching open water. Turn the bearing towards the sea, or pick a spot nearby.`
+        : `The seaward perpendicular runs over land for ${Math.round(h.alpha * R_KM)} km before reaching open water (the coast here is very irregular). Try a smaller smoothing window, or pick a spot nearby.`;
       continue;
     }
     end = h; break;
@@ -226,7 +230,7 @@ function computeRoute(snap) {
   if (lookups.oceans) { const back = lonlat(pointAlong(P, d, alpha - 3 / R_KM)); const w = lookups.oceans.at(...back); if (w) endPlace.water = w.name; }
 
   return {
-    start, end: endPlace, bearing, finalBearing, distKm, chordKm: 2 * R_KM * Math.sin(alpha / 2), coords, midLonlat,
+    start, end: endPlace, bearing, customBearing, finalBearing, distKm, chordKm: 2 * R_KM * Math.sin(alpha / 2), coords, midLonlat,
     maxLat, minLat, crossings, waters, closest, parallel, warning, windowKm: options.windowKm, res,
   };
 }
@@ -262,7 +266,7 @@ function lookAcross() {
     globe.setMode('results');
     $('hover').classList.add('hidden');
     results.show(r);
-    location.hash = `p=${snap.lat.toFixed(5)},${snap.lon.toFixed(5)}&w=${options.windowKm}&r=${snap.res}`;
+    location.hash = `p=${snap.lat.toFixed(5)},${snap.lon.toFixed(5)}&w=${options.windowKm}&r=${snap.res}` + (r.customBearing ? `&b=${fmtBearing(r.bearing)}` : '');
     console.log(`route computed in ${(performance.now() - t0).toFixed(0)} ms`, r);
   }, 40);
 }
@@ -299,6 +303,19 @@ $('window').addEventListener('input', (e) => {
   $('window-out').textContent = `${options.windowKm} km`;
   globe.refreshSnap();
 });
+// Direction set by hand: the checkbox switches between the coast perpendicular (null) and the slider's bearing.
+function setBearing(b) {
+  options.bearing = b == null ? null : +fmtBearing(b);   // normalized to [0, 360), at most 6 decimals
+  $('opt-bearing').checked = options.bearing != null;
+  $('bearing-row').classList.toggle('hidden', options.bearing == null);
+  if (options.bearing != null) { $('bearing').value = options.bearing; $('bearing-out').textContent = `${fmtBearing(options.bearing)}°`; }
+  globe.refreshSnap();
+}
+$('opt-bearing').addEventListener('change', (e) => {
+  // start from the current seaward direction so the arrow does not jump when the slider appears
+  setBearing(e.target.checked ? (globe.snap ? Math.round(globe.snap.bearing * 10) / 10 : +$('bearing').value) : null);
+});
+$('bearing').addEventListener('input', (e) => setBearing(+e.target.value));
 $('opt-fill').addEventListener('change', (e) => { options.fill = e.target.checked; globe.invalidate('high'); });
 $('opt-graticule').addEventListener('change', (e) => { options.graticule = e.target.checked; globe.invalidate('high'); });
 $('opt-borders2').addEventListener('change', (e) => { options.borders2 = e.target.checked; globe.invalidate('high'); });
@@ -324,9 +341,10 @@ async function main() {
   ]);
   await Promise.all([pI, pL]);
   status('');
-  const m = /p=(-?[\d.]+),(-?[\d.]+)(?:&w=(\d+))?(?:&r=([clih]))?/.exec(location.hash);
+  const m = /p=(-?[\d.]+),(-?[\d.]+)(?:&w=(\d+))?(?:&r=([clih]))?(?:&b=(-?[\d.]+))?/.exec(location.hash);
   if (m) {
     if (m[3]) { options.windowKm = +m[3]; $('window').value = m[3]; $('window-out').textContent = `${m[3]} km`; }
+    if (m[5] !== undefined && isFinite(+m[5])) setBearing(+m[5]);   // any precision, e.g. b=213.1522
     const lat = +m[1], lon = +m[2];
     const res = m[4] || 'i';
     if (res === 'h') await loadHiRes();

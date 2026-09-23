@@ -22,7 +22,7 @@ export class Globe {
     this.baseCanvas = opts.baseCanvas;
     this.overlayCanvas = opts.overlayCanvas;
     this.data = opts.data;           // { coast: {c,l,i,h}, borders: {c,l,i,h}, index: {i,h} }
-    this.options = opts.options;     // { fill, graticule, borders2, windowKm }
+    this.options = opts.options;     // { fill, graticule, borders2, windowKm, bearing (null = perpendicular) }
     this.onSnap = opts.onSnap || (() => {});
     this.onNeedHiRes = opts.onNeedHiRes || (() => {});
     this.onClick = opts.onClick || (() => {});
@@ -396,7 +396,9 @@ export class Globe {
 
   describe(snap, g, res) {
     const n = coastNormal(g, snap, this.options.windowKm);
-    return { ...snap, bearing: n.bearing, tangentBearing: n.tangentBearing, res, g };
+    // options.bearing (null = automatic) overrides the perpendicular with a direction set by hand
+    const bearing = this.options.bearing == null ? n.bearing : this.options.bearing;
+    return { ...snap, bearing, tangentBearing: n.tangentBearing, res, g };
   }
 
   /** Recompute the seaward direction (e.g. after the smoothing window changed). */

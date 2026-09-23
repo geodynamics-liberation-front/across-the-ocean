@@ -1,6 +1,6 @@
 // Results panel: world map with selectable projection, route, markers and facts.
 import { drawBaseMap, COLORS, drawLine, projectVisible, drawMarker, drawArrow } from './render.js';
-import { fmtLatLon, fmtDist, fmtKm, compass, compassWord, R_KM, DEG } from './geo.js';
+import { fmtLatLon, fmtDist, fmtKm, fmtBearing, compass, compassWord, R_KM, DEG } from './geo.js';
 import { localTime, utcOffsetMinutes } from './lookup.js';
 
 const PROJECTIONS = [
@@ -230,7 +230,7 @@ export class Results {
     const cname = (c) => c ? c.name : 'unknown country';
     this.els.title.textContent = `${cname(s.country)} → ${cname(e.country)}`;
     this.els.summary.innerHTML =
-      `Standing on the shore${s.city ? ` near <b>${esc(s.city.name)}</b>` : ''} in <b>${esc(cname(s.country))}</b> and looking straight out to sea (${compassWord(r.bearing)}, ${r.bearing.toFixed(0)}°), ` +
+      `Standing on the shore${s.city ? ` near <b>${esc(s.city.name)}</b>` : ''} in <b>${esc(cname(s.country))}</b> and looking ${r.customBearing ? `${compassWord(r.bearing)} (${r.bearing.toFixed(1)}°)` : `straight out to sea (${compassWord(r.bearing)}, ${r.bearing.toFixed(0)}°)`}, ` +
       `the first land you would reach is <b>${esc(cname(e.country))}</b>${e.city ? `, near <b>${esc(e.city.name)}</b>` : ''}, ` +
       `<b>${fmtKm(r.distKm)}</b> away across ${r.waters.length ? listNames(r.waters) : 'the sea'}.`;
 
@@ -240,7 +240,7 @@ export class Results {
     groups.push(factGroup('The route', COLORS.route, [
       ['Great-circle distance', fmtDist(r.distKm)],
       ['Share of Earth\'s girth', `${(100 * r.distKm / (2 * Math.PI * R_KM)).toFixed(1)}% of the way around the world`],
-      ['Direction at the start', `${compassWord(r.bearing)} (${r.bearing.toFixed(1)}°), perpendicular to the coast smoothed over ±${r.windowKm} km`],
+      ['Direction at the start', r.customBearing ? `${compassWord(r.bearing)} (${fmtBearing(r.bearing)}°), set by hand` : `${compassWord(r.bearing)} (${r.bearing.toFixed(1)}°), perpendicular to the coast smoothed over ±${r.windowKm} km`],
       ['Direction on arrival', `${compassWord(r.finalBearing)} (${r.finalBearing.toFixed(1)}°): the same straight line, but the compass heading drifts as you follow a great circle`],
       ['Waters crossed', r.waters.length ? r.waters.map(esc).join(' → ') : '—'],
       ['Highest / lowest latitude', `${fmtLatLon(r.maxLat.lon, r.maxLat.lat)} and ${fmtLatLon(r.minLat.lon, r.minLat.lat)}`],

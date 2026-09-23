@@ -74,7 +74,7 @@ largest file is the 19 MB high-resolution coastline. If you host it yourself,
 serve `data/` with gzip or brotli compression: the binary coastlines shrink by
 roughly half.
 
-Results have shareable URLs (`#p=lat,lon&w=<smoothing km>&r=<coast resolution>`;
+Results have shareable URLs (`#p=lat,lon&w=<smoothing km>&r=<coast resolution>[&b=<bearing>]`, where `b` is only present when the direction was set by hand rather than taken perpendicular to the coast, and accepts any precision, e.g. `b=213.1522`;
 a link made with the high-resolution coast loaded carries `r=h` and reloads it,
 so the route reproduces exactly). The page has two modes. In selection mode
 the point on the shore follows the pointer and the title card shows its

@@ -44,6 +44,10 @@ const POINTS16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 
 const WORDS = { N: 'north', NNE: 'north-northeast', NE: 'northeast', ENE: 'east-northeast', E: 'east', ESE: 'east-southeast', SE: 'southeast', SSE: 'south-southeast', S: 'south', SSW: 'south-southwest', SW: 'southwest', WSW: 'west-southwest', W: 'west', WNW: 'west-northwest', NW: 'northwest', NNW: 'north-northwest' };
 export function compass(b) { return POINTS16[Math.round((((b % 360) + 360) % 360) / 22.5) % 16]; }
 export function compassWord(b) { return WORDS[compass(b)]; }
+/** A bearing normalized to [0, 360). */
+export function normBearing(b) { return ((b % 360) + 360) % 360; }
+/** A bearing as a compact decimal string with no trailing zeros (used in URLs and in the text). */
+export function fmtBearing(b) { return String(parseFloat(normBearing(b).toFixed(6))); }
 
 export function fmtLat(lat) { return `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? 'N' : 'S'}`; }
 export function fmtLon(lon) { return `${Math.abs(lon).toFixed(3)}°${lon >= 0 ? 'E' : 'W'}`; }

@@ -50,6 +50,9 @@
     <label class="row"><span>Coast smoothing window</span>
       <input id="window" type="range" min="2" max="150" step="1" value="20"><output id="window-out" class="mono">20 km</output></label>
     <p class="hint">The seaward direction is the perpendicular to the general trend of the coast over this distance either side of the point. Small values hug every cove; large values follow the sweep of the coast.</p>
+    <label class="row check"><input id="opt-bearing" type="checkbox"> Set the direction by hand</label>
+    <label id="bearing-row" class="row hidden"><span>Bearing</span>
+      <input id="bearing" type="range" min="0" max="359.9" step="0.1" value="0"><output id="bearing-out" class="mono">0°</output></label>
     <label class="row check"><input id="opt-fill" type="checkbox" checked> Tint land</label>
     <label class="row check"><input id="opt-graticule" type="checkbox" checked> Graticule</label>
     <label class="row check"><input id="opt-borders2" type="checkbox"> Internal (state/province) borders</label>
