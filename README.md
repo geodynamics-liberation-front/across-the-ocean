@@ -152,6 +152,11 @@ coast. The Antarctic ice front (GSHHG level 5) is used as the Antarctic coast.
    the "what is across the ocean from you" maps do, and reports where that
    lands instead.
 
+A [Geodynamics Liberation Front](https://therealglf.org/) project, published
+at https://therealglf.org/projects/across-the-ocean/. The page carries this
+attribution in its options panel (menu icon in the title card) and at the foot
+of every results drawer, per the site's publishing contract.
+
 ## Data credits
 
 * **GSHHG 2.3.7** — Wessel, P. and W. H. F. Smith (1996), A global,
